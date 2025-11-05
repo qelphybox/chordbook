@@ -6,6 +6,8 @@
 
 1. сходи в https://t.me/BotFather за своим токеном
 2. `cp .env.sample .env` и заполни `.env` со своим ключом
+3. установить sqlite3 - в консоли выполни `sudo apt install sqlite3`
+4. выполни в консоли `bundle install`
 
 ```bash
 bundle exec ruby chordbook.rb

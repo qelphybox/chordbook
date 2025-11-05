@@ -27,7 +27,7 @@ def handle_message(bot, message)
 
     # query: 'where is my mind' | 'pixies'
     # return: [{ title: 'Where is my mind', artist: 'Pixies', chords: 'Am Dm E' }]
-    songs = DB.search_songs!(query)
+    songs = DB.search_songs!(query) # => SQLite3::ResultSet
     puts songs.inspect
 
     # FIXME: пока что не работает, не понятно как работать с SQLite3::ResultSet

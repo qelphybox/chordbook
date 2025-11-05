@@ -1,5 +1,7 @@
 require 'sqlite3'
 
+# DOC: https://github.com/sparklemotion/sqlite3-ruby
+
 module DB
   CONNECTION = SQLite3::Database.new('chordbook.db')
 
