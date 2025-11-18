@@ -4,10 +4,12 @@ require_relative 'db'
 
 DB.prepare_tables!
 
+CONNECTION = SQLite3::Database.new('chordbook.db')
+CONNECTION.results_as_hash = true
+
 puts 'Loading handle_message...'
 def handle_message(bot, message)
   puts "handle_message..."
-  pp message
 
   tg_id = message.from.id
   username = message.from.username
@@ -25,20 +27,28 @@ def handle_message(bot, message)
   if message.text.start_with?('/song')
     query = message.text.split('/song').last.strip # 'where is my mind'
 
-    # query: 'where is my mind' | 'pixies'
-    # return: [{ title: 'Where is my mind', artist: 'Pixies', chords: 'Am Dm E' }]
+     query: 'where is my mind' | 'pixies'
+     return: [{ title: 'Where is my mind', artist: 'Pixies', chords: 'Am Dm E' }]
     songs = DB.search_songs!(query) # => SQLite3::ResultSet
-    puts songs.inspect
+    # puts songs.inspect
 
     # FIXME: пока что не работает, не понятно как работать с SQLite3::ResultSet
-    # if songs.empty?
-    #   bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
-    #   return
-    # end
+     if songs.empty?
+       bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
+       return
+     end
 
-    # songs.each do |song|
-    #   bot.api.send_message(chat_id: message.chat.id, text: "#{song[:artist]} - #{song[:title]}")
-    # end
+     songs.each do |song|
+      #  bot.api.send_message(chat_id: message.chat.id, text: "#{song[:artist]} - #{song[:title]}")
+      artist = song['artist'] || song[:artist]
+      title  = song['title']  || song[:title]
+      chords = song['chords'] || song[:chords]
+     end
+     bot.api.send_message(
+      chat_id: message.chat.id,
+      text: "#{artist} – #{title}\n\nАккорды:\n#{chords}"
+    )
+  end
   end
 
 end
