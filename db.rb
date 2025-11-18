@@ -1,11 +1,11 @@
-require 'sqlite3'
+require 'sqlite3' # подключение библиотеки sqlite 3, которая позволяет работать с базой данный SQLite из Ruby
 
 # DOC: https://github.com/sparklemotion/sqlite3-ruby
 
-module DB
-  CONNECTION = SQLite3::Database.new('chordbook.db')
+module DB # объявление модуля DB, Модуль в Ruby - это пространство имён, контейнер для методов и констант, здесь используется, чтобы собрать все методы работы с БД в одном месте
+  CONNECTION = SQLite3::Database.new('chordbook.db') # создание объекта подключения к базе данных SQLite с именем chordbook.db. Если файл базы не существует, SQLite создаст его автоматически. CONNECTION - это константа модуля, через которую будут выполняться все запросы
 
-  def self.prepare_tables!
+  def self.prepare_tables! # объявление метода prepare_tables! для модуля DB, self. означает, что это метод модуля, а не экземпляра
     CONNECTION.query <<~SQL
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,11 +14,23 @@ module DB
       )
     SQL
 
+
+    #  SQL-запрос создает таблицу users, если она не существует
+    # поля:
+    # id - уникальный идентификатор пользователя, автоматически увеличивается
+    # tg_id - telegram id пользователя (текст)
+    # username - имя пользователя (текст)
+
     # NOTE: это делается для того, чтобы нельзя было создать двух пользователей
     #       с одним и тем же tg_id
+
+
     CONNECTION.query <<~SQL
       CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tg_id ON users (tg_id)
     SQL
+
+    # создается уникальный индекс на столбец tg_id
+    # это предотвращает добавление двух пользователей с одинаковым tg_id
 
     CONNECTION.query <<~SQL
       CREATE TABLE IF NOT EXISTS songs (
@@ -32,7 +44,17 @@ module DB
     SQL
   end
 
-  def self.add_basic_songs!(user_id)
+  # создается таблица songs для хранения песен
+  # поля:
+  # id - уникальный идентификатор песни
+  # title - название песни
+  # artist - исполнитель
+  # chords - аккорды песни
+  # user_id - внешний ключ на таблицу users (чья это песня)
+  # FOREIGN KEY обеспечивает связь между песнями и пользователями
+
+
+  def self.add_basic_songs!(user_id) # метод добавляет базовые песни для конкретного пользователя (user_id)
     songs = [
       { title: 'Where is my mind', artist: 'Pixies', chords: 'Am Dm E' },
       { title: 'Man in the Box', artist: 'Alice in Chains', chords: 'Am Dm E' },
@@ -42,22 +64,31 @@ module DB
       { title: 'Back in Black', artist: 'AC/DC', chords: 'Am Dm E' },
     ]
 
+    # создается массив хэшей с базовыми песнями (название, исполнитель, аккорды)
+
     songs.each do |song|
       CONNECTION.query <<~SQL, [song[:title], song[:artist], song[:chords], user_id]
         INSERT INTO songs (title, artist, chords, user_id)
           VALUES (?, ?, ?, ?)
-        ON CONFLICT DO NOTHING
+        ON CONFLICT DO NOTHING 
       SQL
     end
   end
 
-  def self.user_exists?(tg_id)
+  # для каждой песни выполняется SQL-запрос на вставку в таблицу songs
+  # используются плейсхолдеры ? для предотвращения SQL-инъекций. чтобы никакой пользовательский ввод не смог изменить структуру SQL-запроса
+  # SQL-инъекция — это уязвимость в приложениях, которая позволяет злоумышленнику «вставлять» свой SQL-код в запрос к базе данных. Если запрос формируется небезопасно (например, просто склеиванием строк), злоумышленник может изменить логику запроса и получить доступ к данным, которые он не должен видеть, или даже удалить/изменить данные.
+  # ON CONFLICT DO NOTHING - если такая песня уже есть, она не вставляется повторно
+
+  def self.user_exists?(tg_id) # метод проверяет существует ли пользователем с заданным tg_id
     CONNECTION.query <<~SQL, tg_id
       SELECT COUNT(*) FROM users WHERE tg_id = ?
     SQL
   end
 
-  def self.create_user!(tg_id, username)
+  # возвращает количество записей с этим tg_id (0 или 1)
+
+  def self.create_user!(tg_id, username) # метод создает нового пользователя
     CONNECTION.query <<~SQL, tg_id, username
       INSERT INTO users (tg_id, username) VALUES (?, ?)
     SQL
@@ -65,7 +96,9 @@ module DB
     raise "User with tg_id #{tg_id} already exists"
   end
 
-  def self.search_songs!(query)
+  # если пользователь с таким tg_id уже существует, SQLite выбросит ConstraintException, ошибка, говорящая о том, что пользователь с таким id уже существует 
+
+  def self.search_songs!(query) # метод ищет песни по названию и исполнителю
     CONNECTION.query <<~SQL, [ "%#{query}%", "%#{query}%" ]
       SELECT id, title, artist, chords
       FROM songs
@@ -74,3 +107,6 @@ module DB
     SQL
   end
 end
+
+# используетс SQL LIKE с %, чтобы искать подстроку в любом месте текста
+# возвращает список совпавших песен с их ID, названием, исполнителем и аккордами
