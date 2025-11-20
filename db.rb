@@ -80,16 +80,18 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
   # SQL-инъекция — это уязвимость в приложениях, которая позволяет злоумышленнику «вставлять» свой SQL-код в запрос к базе данных. Если запрос формируется небезопасно (например, просто склеиванием строк), злоумышленник может изменить логику запроса и получить доступ к данным, которые он не должен видеть, или даже удалить/изменить данные.
   # ON CONFLICT DO NOTHING - если такая песня уже есть, она не вставляется повторно
 
-  def self.user_exists?(tg_id) # метод проверяет существует ли пользователем с заданным tg_id
-    CONNECTION.query <<~SQL, tg_id
-      SELECT COUNT(*) FROM users WHERE tg_id = ?
-    SQL
+  def self.user_exists?(tg_id)
+    CONNECTION.get_first_value(
+      "SELECT COUNT(*) FROM users WHERE tg_id = ?",
+      tg_id
+    ).to_i > 0
   end
+  
 
   # возвращает количество записей с этим tg_id (0 или 1)
 
   def self.create_user!(tg_id, username) # метод создает нового пользователя
-    CONNECTION.query <<~SQL, tg_id, username
+    CONNECTION.query <<~SQL, [tg_id, username]
       INSERT INTO users (tg_id, username) VALUES (?, ?)
     SQL
   rescue SQLite3::ConstraintException
