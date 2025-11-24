@@ -7,6 +7,8 @@ DB.prepare_tables!
 CONNECTION = SQLite3::Database.new('chordbook.db')
 CONNECTION.results_as_hash = true
 
+USER_STATE = {}
+
 puts 'Loading handle_message...'
 def handle_message(bot, message)
   puts "handle_message..."
@@ -23,10 +25,14 @@ def handle_message(bot, message)
     DB.add_basic_songs!(tg_id)
   end
 
-  if message.text == '/start'
+  if message.text == '/start' # message - объект, который пришел из обработчика Tg-бота (например библиотека telegram-bot-ruby)
     bot.api.send_message(chat_id: message.chat.id, text: 'привет! я бот для хранения библиотеки аккордов')
     return
   end
+
+    # message.chat.id - id чата
+    # message.from.id - id пользователя
+    # message.text - текст сообщения 
 
   if message.text.start_with?('/song') # message.text = /song pixies
     query = message.text.split('/song').last # 'pixies'
@@ -46,9 +52,6 @@ def handle_message(bot, message)
       return
     end
 
-
-
-    
     message_text = ""
     songs.each do |song|
       #  bot.api.send_message(chat_id: message.chat.id, text: "#{song[:artist]} - #{song[:title]}")
@@ -58,6 +61,50 @@ def handle_message(bot, message)
       chat_id: message.chat.id,
       text: message_text
     )
+  end
+
+  # if message.text == '/create_song'
+  #   bot.api.send_message(chat_id: message.chat.id, text: "Введите название песни и аккорды, чтобы добавить\n Пример: song - chords")
+  # end
+
+  
+  
+  if message.text == '/create_song'
+    USER_STATE[message.chat.id] = :waiting_for_song 
+      chat_id: message.chat.id,
+      text: "Введите название песни и аккорды.\nПример:\nWonderwall - Em G D A"
+      )
+    return
+  end
+
+  if USER_STATE[message.chat.id] == :waiting_for_song # проверка текущего состояния пользователя по chat.id в хеше/константе USER STATE
+    # если состояние равно символу :waiting_for_song, значит бот ожидает от этого пользователя строки с названием песни и аккордами, и выполняется код внутри if
+    input = message.text # текст входного сообщения сохраняется в переменную. Это строка, которую написал пользователь
+
+    if input.include?('-') # проверка: содержит ли введённая строка символ '-'
+      # Это простая валидация формата - мы ожидаем Название - Аккордыю Если '-' есть, идём в ветку if; иначе - в else
+      title, chords = input.split('-', 2).map(&:strip) # разбиваем строку по первому - на макс. 2 фрагмента (название и остаток)
+      # ограничение 2 важно: если аккорды содержат '-', это не будет ломать разбор
+      # map(&:strip) - убирает пробелы по краям у каждой части
+      # title, chords = -> присваивает превую чатсь в title, вторую в chords
+
+      DB::Songs.add(title: title, chords: chords) # вызываем метод/модуль, который сохраняет песню в базу данных
+      # DB::Songs - модуль или пространство имён, add - метод, принимающий именованные аргументы title: и сhords:
+      # внутри обычно выполняется SQL INSERT
+
+      USER_STATE.delete(message.chat.id) # убирает состояние пользователя из USER_STATE, значит пользователь уже не в режиме ввода песни (выход из состояния ожидания)
+      # это важно, чтобы дальнейшие сообщения не воспринимались как аккорды
+
+      bot.api.send_message( 
+        chat_id: message.chat.id, # куда отправлять
+        text: "Песня успешно добавлена!\n\n#{title} - #{chords}" # text: сообщение: включает название и аккорды, подставляемые через интерполяцию #{...}. \n\n - 2 переноса строки для форматирования
+      ) # бот отправляет подтверждение пользователю 
+    else bot.api.send_message( # альтернативная ветка: срабатывает если input.include?('-') вернул false
+      chat_id: message.chat.id,
+      text: "Неверный формат. Используйте: Название - Аккорды"
+    )
+    end
+    return
   end
 end
 
@@ -74,4 +121,4 @@ end
 
 
 
-puts 'Bye... Bye...'
+# puts 'Bye... Bye...'

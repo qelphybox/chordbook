@@ -112,3 +112,14 @@ end
 
 # используетс SQL LIKE с %, чтобы искать подстроку в любом месте текста
 # возвращает список совпавших песен с их ID, названием, исполнителем и аккордами
+
+module DB
+  module Songs
+    def self.add(title:, chords:)
+      CONNECTION.execute(
+        "INSERT INTO songs (title, chords) VALUES (?, ?)",
+        [title, chords]
+      )
+    end
+  end
+end
