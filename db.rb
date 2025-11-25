@@ -98,6 +98,14 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
     raise "User with tg_id #{tg_id} already exists"
   end
 
+  def self.get_user!(tg_id)
+    CONNECTION.query <<~SQL, [tg_id] # обращение в БД
+      SELECT *
+      FROM users
+      WHERE tg_id = ?
+    SQL
+  end
+
   # если пользователь с таким tg_id уже существует, SQLite выбросит ConstraintException, ошибка, говорящая о том, что пользователь с таким id уже существует 
 
   def self.search_songs!(query) # метод ищет песни по названию и исполнителю
@@ -115,10 +123,10 @@ end
 
 module DB
   module Songs
-    def self.add(title:, chords:)
+    def self.add(user_id:, artist:, title:, chords:)
       CONNECTION.execute(
-        "INSERT INTO songs (title, chords) VALUES (?, ?)",
-        [title, chords]
+        "INSERT INTO songs (user_id, artist, title, chords) VALUES (?, ?, ?, ?)",
+        [user_id, artist, title, chords]
       )
     end
   end

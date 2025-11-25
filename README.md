@@ -21,7 +21,7 @@ bundle exec ruby chordbook.rb
 user: /song where is my mind
 bot:  <artist> - <title> <show_song_btn>
 ```
-1. показать песню - ДЗ
+1. показать песню - дописать
 ```
 user: /show_song <id>
 bot: <artist> - <title>
