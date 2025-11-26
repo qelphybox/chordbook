@@ -9,6 +9,7 @@ CONNECTION.results_as_hash = true
 
 USER_STATE = {}
 ADDING_SONG = {}
+USER_STATE ||= {}
 
 
 puts 'Loading handle_message...'
@@ -100,18 +101,66 @@ def handle_message(bot, message)
     return
   end
   
-  if USER_STATE[message.chat.id] == :waiting_for_chords
-    new_song = ADDING_SONG[message.chat.id]
-    new_song[:chords] = message.text.strip
-    user_id = DB.get_user!(message.chat.id).to_a.first.first
-    DB::Songs.add(title: new_song[:title], artist: new_song[:artist], chords: new_song[:chords], user_id: user_id)
+  
+  # show_song
+
+  if message.text == '/show_song'
+    USER_STATE[message.chat.id] = { step: :waiting_for_artist }
+  
     bot.api.send_message(
       chat_id: message.chat.id,
-      text: "Песня успешно добавлена."
+      text: "Введите имя артиста:"
     )
     return
   end
+  
+  # пользователь пишет имя артиста
+
+  state = USER_STATE[message.chat.id]
+
+  if state && state[:step] == :waiting_for_artist
+    USER_STATE[message.chat.id] = {
+      step: :waiting_for_title,
+      artist: message.text
+    }
+
+    bot.api.send_message(
+      chat_id: message.chat.id,
+      text: "Введите название песни:"
+    )
+    return
+  end
+
+  # пользователь вводит название песни - бот выдает аккорды песни
+
+  state = USER_STATE[message.chat.id]
+
+  if state && state[:step] == :waiting_for_title
+    artist = state[:artist]
+    title  = message.text
+
+    USER_STATE.delete(message.chat.id) # очищаем состояние
+
+    song = Song.find_by_artist_and_title(artist, title)
+
+    if song.nil?
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: "Песня не найдена: #{artist} — #{title}"
+      )
+    else
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: "#{song['artist']} — #{song['title']}\n#{song['chords']}"
+      )
+    end
+
+    return
+  end
+
 end
+
+
 
 
 
@@ -121,7 +170,7 @@ Telegram::Bot::Client.run(ENV['TG_API_TOKEN']) do |bot|
     handle_message(bot, message)
   end
 end
- 
+
 
 
 

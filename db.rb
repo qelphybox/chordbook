@@ -131,3 +131,21 @@ module DB
     end
   end
 end
+
+class Song
+  def self.find_by_artist_and_title(artist, title)
+    sql = <<~SQL
+      SELECT artist, title, chords
+      FROM songs
+      WHERE artist = ? AND title = ?
+      LIMIT 1
+    SQL
+  
+    result = CONNECTION.query(sql, [artist, title])
+    result.next
+  end
+end  
+
+
+
+
