@@ -116,6 +116,16 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
          OR artist LIKE ?
     SQL
   end
+
+  def self.find_song_by_id!(id) # метод ищет песни по названию и исполнителю
+    CONNECTION.query <<~SQL, [id]
+      SELECT id, title, artist, chords
+      FROM songs
+      WHERE id = ?
+    SQL
+  end
+
+  
 end
 
 # используетс SQL LIKE с %, чтобы искать подстроку в любом месте текста
@@ -132,19 +142,8 @@ module DB
   end
 end
 
-class Song
-  def self.find_by_artist_and_title(artist, title)
-    sql = <<~SQL
-      SELECT artist, title, chords
-      FROM songs
-      WHERE artist = ? AND title = ?
-      LIMIT 1
-    SQL
-  
-    result = CONNECTION.query(sql, [artist, title])
-    result.next
-  end
-end  
+
+
 
 
 

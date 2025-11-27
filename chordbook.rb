@@ -48,8 +48,8 @@ def handle_message(bot, message)
      puts songs.inspect
 
     # FIXME: пока что не работает, не понятно как работать с SQLite3::ResultSet
-    pp "-----------"
-    pp songs = songs.to_a
+    
+    songs = songs.to_a
     if songs.empty?
       bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
       return
@@ -103,61 +103,29 @@ def handle_message(bot, message)
   
   
   # show_song
-
-  if message.text == '/show_song'
-    USER_STATE[message.chat.id] = { step: :waiting_for_artist }
   
-    bot.api.send_message(
-      chat_id: message.chat.id,
-      text: "Введите имя артиста:"
-    )
-    return
-  end
   
-  # пользователь пишет имя артиста
-
-  state = USER_STATE[message.chat.id]
-
-  if state && state[:step] == :waiting_for_artist
-    USER_STATE[message.chat.id] = {
-      step: :waiting_for_title,
-      artist: message.text
-    }
-
-    bot.api.send_message(
-      chat_id: message.chat.id,
-      text: "Введите название песни:"
-    )
-    return
-  end
-
-  # пользователь вводит название песни - бот выдает аккорды песни
-
-  state = USER_STATE[message.chat.id]
-
-  if state && state[:step] == :waiting_for_title
-    artist = state[:artist]
-    title  = message.text
-
-    USER_STATE.delete(message.chat.id) # очищаем состояние
-
-    song = Song.find_by_artist_and_title(artist, title)
-
-    if song.nil?
-      bot.api.send_message(
-        chat_id: message.chat.id,
-        text: "Песня не найдена: #{artist} — #{title}"
-      )
-    else
-      bot.api.send_message(
-        chat_id: message.chat.id,
-        text: "#{song['artist']} — #{song['title']}\n#{song['chords']}"
-      )
+  if message.text.start_with?('/show_song')
+    id = message.text.split('/show_song').last
+    if id.empty?
+      bot.api.send_message(chat_id: message.chat.id, text: "песня не найдена")
+      return
     end
-
+    id = id.strip
+    result_song = DB.find_song_by_id!(id) # id = 1
+    result_song = result_song.to_a # [[1, 'Wonderwall', 'Pixies', 'Am, Dm, E']]
+    if result_song.empty? # false
+      bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
+      return
+    end
+    
+    song = result_song.first # [1, 'Wonderwall', 'Pixies', 'Am, Dm, E']
+    title = song[1]
+    artist = song[2]
+    chords = song[3]
+    bot.api.send_message(chat_id: message.chat.id, text: "#{artist} - #{title}\n#{chords}")
     return
   end
-
 end
 
 
