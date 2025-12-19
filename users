@@ -1,0 +1,26 @@
+users
+-----
+id:integer:serial
+tg_chat_id:string:null_false
+state:string:null_false,default: 'chatting', options: [chatting, add_song-waiting_chords, add_song-waiting_title, add_song-waiting_artist, edit_song-waiting_chords, edit_song-waiting_title, edit_song-waiting_artist]
+
+add_index [id tg_chat_id], uniue;
+
+draft_songs
+-----------
+id:integer:serial
+user_id:integer:null_false
+song_id:null_true
+artist:string
+title:string
+chords:text
+
+add_index [id, user_id], unique: true
+
+songs
+-----
+id:integer:serial 
+user_id:integer:null_false
+artist:string
+title:string
+chords:text

@@ -1,15 +1,16 @@
 require 'telegram/bot'
 require 'dotenv/load'
-require_relative 'db'
+require_relative 'db2'
 
-DB.prepare_tables!
+DB.prepare_tables
 
-CONNECTION = SQLite3::Database.new('chordbook.db')
-CONNECTION.results_as_hash = true
 
 USER_STATE = {}
 ADDING_SONG = {}
-USER_STATE ||= {}
+NEW_EDITED_SONG = {}
+USER_STATE = {}
+CURRENT_ID = {}
+
 
 
 puts 'Loading handle_message...'
@@ -126,6 +127,49 @@ def handle_message(bot, message)
     bot.api.send_message(chat_id: message.chat.id, text: "#{artist} - #{title}\n#{chords}")
     return
   end
+  
+  
+  # edit_song
+
+  if message.text.start_with?('/edit_song')
+    puts "user написал edit_song, бот отправит ему сообщение"
+    
+    id = message.text.split(' ').last # здесь остановились. нужно сохранить id между сообщениями
+    # CURRENT_ID[:] = 
+    bot.api.send_message(chat_id: message.chat.id, text: 'Напиши новое название песни')
+    puts "написали юзеру сообщение, запоминаем, что ждем от юзера title"
+    USER_STATE[message.chat.id] = :edit_song_waiting_for_title
+    puts "ждем следующее сообщение"
+    return
+  end
+  
+  if USER_STATE[message.chat.id] = :edit_song_waiting_for_title
+    puts "user прислал title для edit_song бот отвечает юзеру"
+
+    bot.api.send_message(chat_id: message.chat.id, text: 'Напиши новые аккорды песни')
+    
+    puts "запоминаем message.text как title песни"
+    
+    NEW_EDITED_SONG[message.chat.id] = {title: message.text.strip}
+    
+    puts "запомнили что ждем от юзера новые аккорды"
+    
+    USER_STATE[message.chat.id] = :edit_song_waiting_for_chord
+    
+    return
+  end
+  
+  if USER_STATE[message.chat.id] = :edit_song_waiting_for_chord
+    NEW_EDITED_SONG[message.chat.id][:chord] = message.text.strip
+    new_song_data = NEW_EDITED_SONG[message.chat.id]
+    DB.update_song!(id, new_song_data[:artist], new_song_data[:title], new_song_data[:chord])
+
+
+    
+    
+  end
+
+
 end
 
 

@@ -125,7 +125,13 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
     SQL
   end
 
-  
+  def update_song!(id, artist, title, chords)
+    CONNECTION.query <<~SQL, [artist, title, chords, id]
+    UPDATE songs
+    SET artist = ?, title = ?, chords = ?
+    WHERE id = ?
+  SQL
+  end
 end
 
 # используетс SQL LIKE с %, чтобы искать подстроку в любом месте текста

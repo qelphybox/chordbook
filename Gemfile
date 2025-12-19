@@ -8,3 +8,5 @@ gem "telegram-bot-ruby", "~> 2.4"
 gem "dotenv", "~> 3.1"
 
 gem "sqlite3", "~> 2.7"
+
+gem "minitest", "~> 5.27"
