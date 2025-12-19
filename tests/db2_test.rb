@@ -11,9 +11,9 @@ class DB2Test < Minitest::Test
 
   def test_create_user
     user = DB.create_user(123, 'chatting')
-    expected_user =  { "id" => "1", "tg_chat_id" => "123", "state" => "chatting" }
+    expected_user =  { "id" => 1, "tg_chat_id" => "123", "state" => "chatting" }
     assert_equal expected_user, user
-  end 
+  end
 
 #   def test_that_kitty_can_eat
 #     assert_equal "OHAI!", @meme.i_can_has_cheezburger?

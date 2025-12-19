@@ -3,7 +3,8 @@ require 'sqlite3'
 module DB
   class << self
     def prepare_tables
-      CONNECTION.query <<~SQL
+      conn = SQLite3::Database.new(db_file)
+      conn.query <<~SQL
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           tg_chat_id TEXT NOT NULL,
@@ -33,20 +34,8 @@ module DB
       SQL
     end
 
-    def drop_tables
-      CONNECTION.query <<~SQL
-        DROP TABLE IF EXISTS songs;
-        DROP INDEX IF EXISTS user_draft_song_unique_index;
-        DROP TABLE IF EXISTS draft_songs;
-        DROP INDEX IF EXISTS tg_chat_id_uniq_index;
-        DROP TABLE IF EXISTS users;
-      SQL
-    end
-
     def drop_db
-
-      File.delete("chordbook_#{APP_ENV}.db") if File.exist?("chordbook_#{APP_ENV}.db")
-
+      File.delete(db_file) if File.exist?(db_file)
     end
 
 
@@ -61,7 +50,7 @@ module DB
       # user_exists - если юзер уже существует, мы не можем создать его
 
     def create_user(tg_chat_id, state) # user = {} -> возвращает
-      result = CONNECTION.query <<~SQL, [tg_chat_id, state]
+      result = connection.query <<~SQL, [tg_chat_id, state]
         INSERT INTO users (tg_chat_id, state)
         VALUES (?, ?)
         RETURNING * ;
@@ -108,7 +97,6 @@ module DB
     def connection
       @connection ||= SQLite3::Database.new(db_file)
     end
-
 
     APP_ENV = ENV['APP_ENV'] || 'development'
     def db_file
