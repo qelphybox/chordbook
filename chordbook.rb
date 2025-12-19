@@ -1,6 +1,6 @@
 require 'telegram/bot'
 require 'dotenv/load'
-require_relative 'db2'
+require_relative 'db'
 
 DB.prepare_tables
 
@@ -36,7 +36,7 @@ def handle_message(bot, message)
 
     # message.chat.id - id чата
     # message.from.id - id пользователя
-    # message.text - текст сообщения 
+    # message.text - текст сообщения
 
   if message.text.start_with?('/song') # message.text = /song pixies
     query = message.text.split('/song').last # 'pixies'
@@ -49,7 +49,7 @@ def handle_message(bot, message)
      puts songs.inspect
 
     # FIXME: пока что не работает, не понятно как работать с SQLite3::ResultSet
-    
+
     songs = songs.to_a
     if songs.empty?
       bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
@@ -71,19 +71,19 @@ def handle_message(bot, message)
   #   bot.api.send_message(chat_id: message.chat.id, text: "Введите название песни и аккорды, чтобы добавить\n Пример: song - chords")
   # end
 
-  
-  
+
+
   if message.text == '/add_song'
-    USER_STATE[message.chat.id] = :waiting_for_artist 
+    USER_STATE[message.chat.id] = :waiting_for_artist
     bot.api.send_message(
       chat_id: message.chat.id,
       text: "Введите имя артиста."
     )
     return
   end
-  
+
   if USER_STATE[message.chat.id] == :waiting_for_artist
-    ADDING_SONG[message.chat.id] = {artist: message.text.strip} # ADDING_SONG = {} -> ADDING_SONG = {1: {artist: "Pixies"}}  
+    ADDING_SONG[message.chat.id] = {artist: message.text.strip} # ADDING_SONG = {} -> ADDING_SONG = {1: {artist: "Pixies"}}
     USER_STATE[message.chat.id] = :waiting_for_title
     bot.api.send_message(
       chat_id: message.chat.id,
@@ -101,11 +101,11 @@ def handle_message(bot, message)
     )
     return
   end
-  
-  
+
+
   # show_song
-  
-  
+
+
   if message.text.start_with?('/show_song')
     id = message.text.split('/show_song').last
     if id.empty?
@@ -119,7 +119,7 @@ def handle_message(bot, message)
       bot.api.send_message(chat_id: message.chat.id, text: 'песня не найдена')
       return
     end
-    
+
     song = result_song.first # [1, 'Wonderwall', 'Pixies', 'Am, Dm, E']
     title = song[1]
     artist = song[2]
@@ -127,46 +127,46 @@ def handle_message(bot, message)
     bot.api.send_message(chat_id: message.chat.id, text: "#{artist} - #{title}\n#{chords}")
     return
   end
-  
-  
+
+
   # edit_song
 
   if message.text.start_with?('/edit_song')
     puts "user написал edit_song, бот отправит ему сообщение"
-    
+
     id = message.text.split(' ').last # здесь остановились. нужно сохранить id между сообщениями
-    # CURRENT_ID[:] = 
+    # CURRENT_ID[:] =
     bot.api.send_message(chat_id: message.chat.id, text: 'Напиши новое название песни')
     puts "написали юзеру сообщение, запоминаем, что ждем от юзера title"
     USER_STATE[message.chat.id] = :edit_song_waiting_for_title
     puts "ждем следующее сообщение"
     return
   end
-  
+
   if USER_STATE[message.chat.id] = :edit_song_waiting_for_title
     puts "user прислал title для edit_song бот отвечает юзеру"
 
     bot.api.send_message(chat_id: message.chat.id, text: 'Напиши новые аккорды песни')
-    
+
     puts "запоминаем message.text как title песни"
-    
+
     NEW_EDITED_SONG[message.chat.id] = {title: message.text.strip}
-    
+
     puts "запомнили что ждем от юзера новые аккорды"
-    
+
     USER_STATE[message.chat.id] = :edit_song_waiting_for_chord
-    
+
     return
   end
-  
+
   if USER_STATE[message.chat.id] = :edit_song_waiting_for_chord
     NEW_EDITED_SONG[message.chat.id][:chord] = message.text.strip
     new_song_data = NEW_EDITED_SONG[message.chat.id]
     DB.update_song!(id, new_song_data[:artist], new_song_data[:title], new_song_data[:chord])
 
 
-    
-    
+
+
   end
 
 

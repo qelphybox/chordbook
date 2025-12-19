@@ -1,9 +1,9 @@
 ENV['APP_ENV'] = 'test'
 require 'minitest/autorun'
-require_relative '../db2.rb'
+require_relative '../db.rb'
 
 
-class DB2Test < Minitest::Test
+class DBTest < Minitest::Test
   def setup
     DB.drop_db
     DB.prepare_tables
