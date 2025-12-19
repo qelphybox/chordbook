@@ -1,9 +1,9 @@
-require 'sqlite3' # подключение библиотеки sqlite 3, которая позволяет работать с базой данный SQLite из Ruby
+require "sqlite3" # подключение библиотеки sqlite 3, которая позволяет работать с базой данный SQLite из Ruby
 
 # DOC: https://github.com/sparklemotion/sqlite3-ruby
 
 module DB # объявление модуля DB, Модуль в Ruby - это пространство имён, контейнер для методов и констант, здесь используется, чтобы собрать все методы работы с БД в одном месте
-  CONNECTION = SQLite3::Database.new('chordbook.db') # создание объекта подключения к базе данных SQLite с именем chordbook.db. Если файл базы не существует, SQLite создаст его автоматически. CONNECTION - это константа модуля, через которую будут выполняться все запросы
+  CONNECTION = SQLite3::Database.new("chordbook.db") # создание объекта подключения к базе данных SQLite с именем chordbook.db. Если файл базы не существует, SQLite создаст его автоматически. CONNECTION - это константа модуля, через которую будут выполняться все запросы
 
   def self.prepare_tables! # объявление метода prepare_tables! для модуля DB, self. означает, что это метод модуля, а не экземпляра
     CONNECTION.query <<~SQL
@@ -14,7 +14,6 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
       )
     SQL
 
-
     #  SQL-запрос создает таблицу users, если она не существует
     # поля:
     # id - уникальный идентификатор пользователя, автоматически увеличивается
@@ -23,7 +22,6 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
 
     # NOTE: это делается для того, чтобы нельзя было создать двух пользователей
     #       с одним и тем же tg_id
-
 
     CONNECTION.query <<~SQL
       CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tg_id ON users (tg_id)
@@ -53,15 +51,14 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
   # user_id - внешний ключ на таблицу users (чья это песня)
   # FOREIGN KEY обеспечивает связь между песнями и пользователями
 
-
   def self.add_basic_songs!(user_id) # метод добавляет базовые песни для конкретного пользователя (user_id)
     songs = [
-      { title: 'Where is my mind', artist: 'Pixies', chords: 'Am Dm E' },
-      { title: 'Man in the Box', artist: 'Alice in Chains', chords: 'Am Dm E' },
-      { title: 'Smells Like Teen Spirit', artist: 'Nirvana', chords: 'Am Dm E' },
-      { title: 'Enter Sandman', artist: 'Metallica', chords: 'Am Dm E' },
-      { title: 'Thunderstruck', artist: 'AC/DC', chords: 'Am Dm E' },
-      { title: 'Back in Black', artist: 'AC/DC', chords: 'Am Dm E' },
+      {title: "Where is my mind", artist: "Pixies", chords: "Am Dm E"},
+      {title: "Man in the Box", artist: "Alice in Chains", chords: "Am Dm E"},
+      {title: "Smells Like Teen Spirit", artist: "Nirvana", chords: "Am Dm E"},
+      {title: "Enter Sandman", artist: "Metallica", chords: "Am Dm E"},
+      {title: "Thunderstruck", artist: "AC/DC", chords: "Am Dm E"},
+      {title: "Back in Black", artist: "AC/DC", chords: "Am Dm E"}
     ]
 
     # создается массив хэшей с базовыми песнями (название, исполнитель, аккорды)
@@ -86,7 +83,6 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
       tg_id
     ).to_i > 0
   end
-  
 
   # возвращает количество записей с этим tg_id (0 или 1)
 
@@ -106,10 +102,10 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
     SQL
   end
 
-  # если пользователь с таким tg_id уже существует, SQLite выбросит ConstraintException, ошибка, говорящая о том, что пользователь с таким id уже существует 
+  # если пользователь с таким tg_id уже существует, SQLite выбросит ConstraintException, ошибка, говорящая о том, что пользователь с таким id уже существует
 
   def self.search_songs!(query) # метод ищет песни по названию и исполнителю
-    CONNECTION.query <<~SQL, [ "%#{query}%", "%#{query}%" ]
+    CONNECTION.query <<~SQL, ["%#{query}%", "%#{query}%"]
       SELECT id, title, artist, chords
       FROM songs
       WHERE title LIKE ?
@@ -127,10 +123,10 @@ module DB # объявление модуля DB, Модуль в Ruby - это 
 
   def update_song!(id, artist, title, chords)
     CONNECTION.query <<~SQL, [artist, title, chords, id]
-    UPDATE songs
-    SET artist = ?, title = ?, chords = ?
-    WHERE id = ?
-  SQL
+      UPDATE songs
+      SET artist = ?, title = ?, chords = ?
+      WHERE id = ?
+    SQL
   end
 end
 
@@ -147,10 +143,3 @@ module DB
     end
   end
 end
-
-
-
-
-
-
-
