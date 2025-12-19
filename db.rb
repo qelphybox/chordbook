@@ -46,7 +46,6 @@ module DB
     # raises:
 
     # user_exists - если юзер уже существует, мы не можем создать его
-
     def create_user(tg_chat_id, state) # user = {} -> возвращает
       result = connection.query <<~SQL, [tg_chat_id, state]
         INSERT INTO users (tg_chat_id, state)
@@ -82,6 +81,13 @@ module DB
     # song_not_found - песня не найдена id не существует в таблице
 
     def update_song(id, artist, title, chords)
+    end
+
+    def user_exists?(tg_chat_id)
+      result = connection.query <<-SQL, [tg_chat_id.to_s]
+        SELECT 1 FROM users WHERE tg_chat_id = ?
+      SQL
+      return result.next_hash["1"] == 1
     end
 
     private

@@ -19,7 +19,7 @@ def handle_message(bot, message)
   puts "проверяем существует ли юзер"
   pp DB.user_exists?(tg_id)
   if !DB.user_exists?(tg_id)
-    puts "юзера нет - создаем юзера"
+    puts "юзера нет - даем юзера"
     DB.create_user!(tg_id, username)
     puts "добавляем юзеру базовые песни"
     DB.add_basic_songs!(tg_id)
